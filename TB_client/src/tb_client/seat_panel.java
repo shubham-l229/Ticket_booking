@@ -64,7 +64,7 @@ public class seat_panel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void lbl_seatNumMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_lbl_seatNumMouseClicked
-        System.out.println(s.toString());
+
         int res = cl.sendReadRequest(s);
         if(res==1){
             new viewTicketFrame(s, cl).setVisible(true);

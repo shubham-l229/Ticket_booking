@@ -6,6 +6,8 @@ import java.io.DataOutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  *
@@ -18,6 +20,8 @@ public class Client extends Thread {
     private DataOutputStream data_out;
     private String clientUsername;
 
+    private ScheduledExecutorService src;
+    
     private frame_main fr;
     private seatsDAO sd;
     private HashMap<String, ArrayList<seats>> seatsList;
@@ -26,6 +30,7 @@ public class Client extends Thread {
         this.fr = frame;
         this.clientUsername = fr.getClientUsername();
         sd = new seatsDAO();
+        src = Executors.newSingleThreadScheduledExecutor();
     }
 
     private final int PORT_NUM = 14000;
@@ -101,4 +106,45 @@ public class Client extends Thread {
         }
         return 0;
     }
+    
+    public int sendReadUnlock(seats s){
+        try {
+            data_out.writeUTF("SEAT_READ_UNLOCK");
+            data_out.writeUTF(s.getMovie_name()+s.getSeat_number());
+            
+            String res = data_in.readUTF();
+            if(res.equals("SEAT_READ_UNLOCKED")){
+                return 1;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    
+    public int sendWriteLock(seats s){
+        try {
+            data_out.writeUTF("SEAT_WRITE_INIT");
+            data_out.writeUTF(s.getMovie_name()+s.getSeat_number());
+            
+            String res = data_in.readUTF();
+            if(res.equals("FILE_IN_USE")){
+                return 0;
+            }else if(res.equals("SEAT_WRITE_SUCCESS")){
+                return 1;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+    
+    private Thread updateThread = new Thread(()->{
+        try {
+            data_out.writeUTF("SEAT_UPDATE_REQUEST");
+            getSeatsList();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    });
 }

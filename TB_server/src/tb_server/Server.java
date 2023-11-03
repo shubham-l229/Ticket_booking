@@ -62,6 +62,10 @@ public class Server extends Thread {
         seatLists.put(movieName, arr);
     }
     
+    private void changeSeatStatus(String seatNum,String status){
+        
+    }
+    
     class clientHandler extends Thread {
 
         private String clientUsername;
@@ -97,6 +101,12 @@ public class Server extends Thread {
                     
                     if(res.equals("SEAT_READ_INIT")){
                         handleReadRequest();
+                    }else if(res.equals("SEAT_UPDATE_REQUEST")){
+                        sendSeatList();
+                    }else if(res.equals("SEAT_READ_UNLOCK")){
+                        handleReadUnlock();
+                    }else if(res.equals("SEAT_WRITE_INIT")){
+                        handleWriteRequest();
                     }
                 }
             } catch (Exception e) {
@@ -128,6 +138,32 @@ public class Server extends Thread {
                 Lock readLock = rll.readLock();
                 readLock.lock();
                 data_out.writeUTF("SEAT_READ_AQUIRED");
+                heldLocks.put(this, rll);
+            }
+        }
+        
+        private void handleReadUnlock() throws IOException{
+            String seatNum = data_in.readUTF();
+            
+            ReentrantReadWriteLock rll = seatLocks.get(seatNum);
+            
+            Lock rl = rll.readLock();
+            rl.unlock();
+            data_out.writeUTF("SEAT_READ_UNLOCKED");
+            heldLocks.remove(this,rl);
+        }
+        
+        private void handleWriteRequest() throws IOException{
+            String seatNum = data_in.readUTF();
+            
+            ReentrantReadWriteLock rll = seatLocks.get(seatNum);
+            
+            if(rll.isWriteLocked()||rll.getReadLockCount()!=0){
+                data_out.writeUTF("FILE_IN_USE");
+            }else{
+                Lock wl = rll.writeLock();
+                wl.lock();
+                data_out.writeUTF("SEAT_WRITE_SUCCESS");
                 heldLocks.put(this, rll);
             }
         }

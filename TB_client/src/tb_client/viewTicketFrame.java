@@ -1,6 +1,7 @@
 package tb_client;
 
 import entities.seats;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -9,10 +10,12 @@ import entities.seats;
 public class viewTicketFrame extends javax.swing.JFrame {
 
     private seats seat;
+    private Client cl;
     
     public viewTicketFrame(seats st,Client cl) {
         initComponents();
         this.seat = st;
+        this.cl = cl;
         init();
     }
 
@@ -36,7 +39,7 @@ public class viewTicketFrame extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
         lbl_seatNum = new javax.swing.JLabel();
         lbl_price = new javax.swing.JLabel();
-        jButton1 = new javax.swing.JButton();
+        btn_bookTicket = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setResizable(false);
@@ -57,8 +60,13 @@ public class viewTicketFrame extends javax.swing.JFrame {
 
         lbl_price.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
 
-        jButton1.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
-        jButton1.setText("Book Ticket");
+        btn_bookTicket.setFont(new java.awt.Font("Segoe UI", 1, 14)); // NOI18N
+        btn_bookTicket.setText("Book Ticket");
+        btn_bookTicket.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btn_bookTicketActionPerformed(evt);
+            }
+        });
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -77,7 +85,7 @@ public class viewTicketFrame extends javax.swing.JFrame {
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel1Layout.createSequentialGroup()
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(jButton1)
+                .addComponent(btn_bookTicket)
                 .addContainerGap())
         );
         jPanel1Layout.setVerticalGroup(
@@ -93,7 +101,7 @@ public class viewTicketFrame extends javax.swing.JFrame {
                     .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(lbl_price, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addGap(18, 18, 18)
-                .addComponent(jButton1)
+                .addComponent(btn_bookTicket)
                 .addGap(0, 9, Short.MAX_VALUE))
         );
 
@@ -111,6 +119,24 @@ public class viewTicketFrame extends javax.swing.JFrame {
         pack();
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
+
+    private void btn_bookTicketActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_bookTicketActionPerformed
+        int res = cl.sendReadUnlock(seat);
+        
+        if(res==1){
+            int sts = JOptionPane.showConfirmDialog(null, "Confirm Booking?");
+            
+            //approved
+            if(sts==JOptionPane.OK_OPTION){
+                int rs = cl.sendWriteLock(seat);
+                if(rs==1){
+                    JOptionPane.showMessageDialog(null, "Seat Booked Successfully!");
+                }else{
+                    JOptionPane.showMessageDialog(null, "Seat already being booked!");
+                }
+            }
+        }
+    }//GEN-LAST:event_btn_bookTicketActionPerformed
 
     /**
      * @param args the command line arguments
@@ -148,7 +174,7 @@ public class viewTicketFrame extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton1;
+    private javax.swing.JButton btn_bookTicket;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
