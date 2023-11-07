@@ -11,19 +11,19 @@ public class viewTicketFrame extends javax.swing.JFrame {
 
     private seats seat;
     private Client cl;
-    
-    public viewTicketFrame(seats st,Client cl) {
+
+    public viewTicketFrame(seats st, Client cl) {
         initComponents();
         this.seat = st;
         this.cl = cl;
         init();
     }
 
-    private void init(){
+    private void init() {
         lbl_seatNum.setText(seat.getSeat_number());
         lbl_price.setText(seat.getSeat_price());
     }
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -121,21 +121,24 @@ public class viewTicketFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btn_bookTicketActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn_bookTicketActionPerformed
-        int res = cl.sendReadUnlock(seat);
-        
-        if(res==1){
-            int sts = JOptionPane.showConfirmDialog(null, "Confirm Booking?");
-            
-            //approved
-            if(sts==JOptionPane.OK_OPTION){
-                int rs = cl.sendWriteLock(seat);
+        cl.setThreadStatus(false);
+        int res = cl.sendWriteLockRequest(seat);
+        if(res==0){
+            JOptionPane.showMessageDialog(null, "Seat is Already Being Booked!");
+            dispose();
+        }else if(res==1){
+            int ans = JOptionPane.showConfirmDialog(null, "Confirm Seat Booking?");
+            if(ans == JOptionPane.OK_OPTION){
+                int rs = cl.sendSeatBookingReq(seat);
                 if(rs==1){
                     JOptionPane.showMessageDialog(null, "Seat Booked Successfully!");
-                }else{
-                    JOptionPane.showMessageDialog(null, "Seat already being booked!");
+                    dispose();
                 }
+            }else{
+                cl.sendWriteUnlock(seat);
             }
         }
+        cl.setThreadStatus(true);
     }//GEN-LAST:event_btn_bookTicketActionPerformed
 
     /**
@@ -168,7 +171,7 @@ public class viewTicketFrame extends javax.swing.JFrame {
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new viewTicketFrame(null,null).setVisible(true);
+                new viewTicketFrame(null, null).setVisible(true);
             }
         });
     }

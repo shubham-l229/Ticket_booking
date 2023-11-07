@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -20,8 +21,10 @@ public class Client extends Thread {
     private DataOutputStream data_out;
     private String clientUsername;
 
+    private boolean threadStatus = true;
+
     private ScheduledExecutorService src;
-    
+
     private frame_main fr;
     private seatsDAO sd;
     private HashMap<String, ArrayList<seats>> seatsList;
@@ -31,6 +34,10 @@ public class Client extends Thread {
         this.clientUsername = fr.getClientUsername();
         sd = new seatsDAO();
         src = Executors.newSingleThreadScheduledExecutor();
+    }
+
+    public void setThreadStatus(boolean threadStatus) {
+        this.threadStatus = threadStatus;
     }
 
     private final int PORT_NUM = 14000;
@@ -45,12 +52,13 @@ public class Client extends Thread {
             data_in = new DataInputStream(clientSoc.getInputStream());
             data_out = new DataOutputStream(clientSoc.getOutputStream());
             seatsList = new HashMap<>();
-            
+
             data_out.writeUTF(clientUsername);
             getSeatsList();
-            
+
             fr.addMoviePanels(seatsList);
-            
+            src.scheduleAtFixedRate(updateThread, 0, 1, TimeUnit.SECONDS);
+
             while (!clientSoc.isClosed());
 
             shutDown();
@@ -72,11 +80,11 @@ public class Client extends Thread {
     private void getSeatsList() {
         try {
             int movieNum = data_in.readInt();
-            
+
             for (int i = 0; i < movieNum; i++) {
                 String movieName = data_in.readUTF();
                 ArrayList<seats> arr = new ArrayList<>();
-                
+
                 for (int j = 0; j < 30; j++) {
                     byte[] data = new byte[data_in.readInt()];
                     data_in.readFully(data);
@@ -88,49 +96,63 @@ public class Client extends Thread {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
+    }   
     
-    public int sendReadRequest(seats s){
+    public int checkSeatWriteStatus(seats s){
         try {
-            data_out.writeUTF("SEAT_READ_INIT");
-            data_out.writeUTF(s.getMovie_name()+s.getSeat_number());
+            data_out.writeUTF("CHECK_SEAT_WRITE_STATUS");
+            data_out.writeUTF(s.getMovie_name()+":"+s.getSeat_number());
             
             String res = data_in.readUTF();
             if(res.equals("SEAT_WRITE_LOCKED")){
                 return 0;
-            }else if(res.equals("SEAT_READ_AQUIRED")){
+            }else if(res.equals("SEAT_OPEN")){
                 return 1;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return 0;
+        return 10;
     }
     
-    public int sendReadUnlock(seats s){
+    public int sendWriteLockRequest(seats s){
         try {
-            data_out.writeUTF("SEAT_READ_UNLOCK");
-            data_out.writeUTF(s.getMovie_name()+s.getSeat_number());
+            data_out.writeUTF("SEAT_WRITE_LOCK");
+            data_out.writeUTF(s.getMovie_name()+":"+s.getSeat_number());
             
             String res = data_in.readUTF();
-            if(res.equals("SEAT_READ_UNLOCKED")){
-                return 1;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-    
-    public int sendWriteLock(seats s){
-        try {
-            data_out.writeUTF("SEAT_WRITE_INIT");
-            data_out.writeUTF(s.getMovie_name()+s.getSeat_number());
-            
-            String res = data_in.readUTF();
-            if(res.equals("FILE_IN_USE")){
+            if(res.equals("SEAT_WRITE_LOCKED")){
                 return 0;
-            }else if(res.equals("SEAT_WRITE_SUCCESS")){
+            }else if(res.equals("SEAT_LOCK_SUCCESS")){
+                return 1;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 10;
+    }
+    
+    public int sendSeatBookingReq(seats s){
+        try {
+            data_out.writeUTF("SEAT_BOOKING_REQ");
+            data_out.writeUTF(s.getMovie_name()+":"+s.getSeat_number());
+            
+            String res = data_in.readUTF();
+            if(res.equals("SEAT_BOOKING_SUCCESS")){
+                return 1;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 10;
+    }
+    
+    public int sendWriteUnlock(seats s){
+        try {
+            data_out.writeUTF("SEAT_WRITE_UNLOCK");
+            data_out.writeUTF(s.getMovie_name()+":"+s.getSeat_number());
+            
+            if((data_in.readUTF()).equals("UNLOCKED")){
                 return 1;
             }
         } catch (Exception e) {
@@ -139,12 +161,16 @@ public class Client extends Thread {
         return 0;
     }
     
-    private Thread updateThread = new Thread(()->{
-        try {
-            data_out.writeUTF("SEAT_UPDATE_REQUEST");
-            getSeatsList();
-        } catch (Exception e) {
-            e.printStackTrace();
+    private Thread updateThread = new Thread(() -> {
+        if (threadStatus) {
+            try {
+                data_out.writeUTF("SEAT_UPDATE_REQUEST");
+                getSeatsList();
+                System.out.println("Got List");
+                fr.addMoviePanels(seatsList);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     });
 }

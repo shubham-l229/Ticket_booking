@@ -9,24 +9,30 @@ import javax.swing.JOptionPane;
  * @author Aryan Mehta
  */
 public class seat_panel extends javax.swing.JPanel {
+
     private seats s;
     private Client cl;
-    
-    public seat_panel(seats s,Client cl) {
+
+    private boolean enabled;
+
+    public seat_panel(seats s, Client cl) {
         initComponents();
         this.s = s;
         this.cl = cl;
         init();
     }
-    
-    private void init(){
+
+    private void init() {
         lbl_seatNum.setText(s.getSeat_number());
-        if(s.getSeat_status().equals("NOT_BOOKED")){
+        if (s.getSeat_status().equals("NOT_BOOKED")) {
             lbl_seatNum.setBackground(Color.GREEN);
-        }else{ 
+            enabled = true;
+        } else {
             lbl_seatNum.setBackground(Color.RED);
+            enabled = false;
         }
     }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -64,12 +70,15 @@ public class seat_panel extends javax.swing.JPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void lbl_seatNumMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_lbl_seatNumMouseClicked
-
-        int res = cl.sendReadRequest(s);
-        if(res==1){
-            new viewTicketFrame(s, cl).setVisible(true);
+        if (enabled) {
+            int res = cl.checkSeatWriteStatus(s);
+            if(res==1){
+                new viewTicketFrame(s, cl).setVisible(true);
+            }else{
+                JOptionPane.showMessageDialog(null, "Seat is being Booked!!");
+            }
         }else{
-            JOptionPane.showMessageDialog(null, "Seat is Already being booked!");
+            JOptionPane.showMessageDialog(null, "Seat Already Booked!!");
         }
     }//GEN-LAST:event_lbl_seatNumMouseClicked
 

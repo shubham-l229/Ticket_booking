@@ -1,5 +1,6 @@
 package tb_client;
 
+import GUI_settings.ScrollBar;
 import entities.seats;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ public class frame_main extends javax.swing.JFrame {
 
     private void init() {
         body.setLayout(new MigLayout("fillx"));
+        jScrollPane1.setVerticalScrollBar(new ScrollBar());
     }
     
     public void addMoviePanels(HashMap<String, ArrayList<seats>> seatList) {
